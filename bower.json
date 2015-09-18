@@ -1,0 +1,42 @@
+{
+  "name": "scalike",
+  "version": "0.0.1",
+  "main": "dist/scalike.js",
+  "author": {
+    "name": "ryoppy",
+    "url": "https://github.com/ryoppy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ryoppy/scalike-typescript.git"
+  },
+  "typescript": {
+    "definition": "dist/scalike.d.ts"
+  },
+  "ignore": [
+    "**/.*",
+    "*.coffee",
+    "*.md",
+    "ts*",
+    "app",
+    "node_modules",
+    "test",
+    "typings",
+    "package.json",
+    "dist/scalike.d.ts"
+  ],
+  "keywords": [
+    "immutable",
+    "data",
+    "datastructure",
+    "functional",
+    "collection",
+    "stateless",
+    "scala",
+    "monad",
+    "option",
+    "maybe",
+    "either"
+  ],
+  "license": "MIT"
+}

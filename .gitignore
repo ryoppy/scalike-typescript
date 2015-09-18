@@ -1,0 +1,5 @@
+typings
+fp
+app/build
+app/src/*.js
+test/*.js

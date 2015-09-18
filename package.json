@@ -1,0 +1,56 @@
+{
+  "name": "scalike",
+  "version": "0.0.4",
+  "author": {
+    "name": "ryoppy",
+    "url": "https://github.com/ryoppy"
+  },
+  "main": "dist/scalike.js",
+  "dependencies": {},
+  "devDependencies": {
+    "browserify": "^11.1.0",
+    "coffee-script": "^1.9.0",
+    "gulp": "^3.6.2",
+    "gulp-concat": "^2.6.0",
+    "gulp-plumber": "^1.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^1.5.2",
+    "gulp-tslint": "^3.3.0",
+    "gulp-typescript": "^2.9.0",
+    "gulp-uglify": "^1.4.1",
+    "gulp-util": "^3.0.2",
+    "merge2": "^0.3.6",
+    "mocha": "^2.3.3",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ryoppy/scalike-typescript.git"
+  },
+  "scripts": {
+    "main": "gulp build",
+    "test": "mocha --compilers ts:espower-typescript/guess test/**/*.ts",
+    "lint": "tslint -c ./tslint.json ./app/src/*.ts"
+  },
+  "typescript": {
+    "definition": "dist/scalike.d.ts"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "immutable",
+    "data",
+    "datastructure",
+    "functional",
+    "collection",
+    "stateless",
+    "scala",
+    "monad",
+    "option",
+    "maybe",
+    "either"
+  ],
+  "license": "MIT"
+}
