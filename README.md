@@ -1,5 +1,9 @@
 # Scala like utility for TypeScript
 
+[![Travis CI](https://travis-ci.org/ryoppy/scalike-typescript.svg?branch=master)](https://travis-ci.org/ryoppy/scalike-typescript)
+
+[![npm version](https://badge.fury.io/js/scalikea.svg)](http://badge.fury.io/js/scalike)
+
 - Optional (Option is reserved word..)
 - Try
 - Either
