@@ -46,7 +46,7 @@ require(['./scalike.min.js'], function (scalike) {
 
 ```
 ///<reference path='./node_modules/scalike/dist/scalike.d.ts'/>
-import Scalike = require('scalike');
+import scalike = require('scalike');
 ...
 ```
 

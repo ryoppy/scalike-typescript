@@ -1,3 +1,5 @@
+/* tslint:disable:no-use-before-declare */
+
 /**
  * Represents optional values.
  * Optional has `Some` and `None` classes.

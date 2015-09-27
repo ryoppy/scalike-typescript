@@ -75,8 +75,9 @@ var LeftProjection = (function () {
         }
     };
     LeftProjection.prototype.foreach = function (f) {
-        if (this.self.isLeft)
+        if (this.self.isLeft) {
             f(this.self.value);
+        }
     };
     LeftProjection.prototype.getOrElse = function (x) {
         return this.self.isLeft ? this.self.value : x;
@@ -123,8 +124,9 @@ var RightProjection = (function () {
         }
     };
     RightProjection.prototype.foreach = function (f) {
-        if (this.self.isRight)
+        if (this.self.isRight) {
             f(this.self.value);
+        }
     };
     RightProjection.prototype.getOrElse = function (x) {
         return this.self.isRight ? this.self.value : x;
@@ -157,6 +159,7 @@ var RightProjection = (function () {
 exports.RightProjection = RightProjection;
 
 },{"./Optional":2}],2:[function(require,module,exports){
+/* tslint:disable:no-use-before-declare */
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -425,8 +428,9 @@ var TryImpl = (function () {
         return this.isFailure ? a : this;
     };
     TryImpl.prototype.foreach = function (f) {
-        if (this.isSuccess)
+        if (this.isSuccess) {
             f(this.get());
+        }
     };
     TryImpl.prototype.transform = function (fs, ff) {
         try {
@@ -493,7 +497,7 @@ var SuccessImpl = (function (_super) {
         return Success(this.value);
     };
     SuccessImpl.prototype.toString = function () {
-        return "Success(" + this.value + ")";
+        return 'Success(' + this.value + ')';
     };
     return SuccessImpl;
 })(TryImpl);
