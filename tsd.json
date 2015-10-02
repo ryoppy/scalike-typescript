@@ -19,6 +19,9 @@
     },
     "sinon/sinon.d.ts": {
       "commit": "54f064352a3615443f7bff4198078db15e28247b"
+    },
+    "es6-promise/es6-promise.d.ts": {
+      "commit": "d0adccc436197cc7c3559322721e9df86b892bd6"
     }
   }
 }

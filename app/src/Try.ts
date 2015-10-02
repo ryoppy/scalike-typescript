@@ -16,7 +16,8 @@ export interface Try<A> {
   //flatten(): Try<A>;
   failed(): Try<A>;
   transform<B>(fs: (a: A) => Try<B>, ff: (e: Error) => Try<B>): Try<B>;
-  recover<B extends A>(f: (e: Error) => Optional<Try<B>>): Try<A>;
+  recover<B extends A>(f: (e: Error) => Optional<B>): Try<A>;
+  recoverWith<B extends A>(f: (e: Error) => Optional<Try<B>>): Try<A>;
   // add methods
   apply1<B, C>(ob: Try<B>, f: (a: A, b: B) => C): Try<C>;
   apply2<B, C, D>(ob: Try<B>, oc: Try<C>, f: (a: A, b: B, c: C) => D): Try<D>;
@@ -51,7 +52,8 @@ class TryImpl<A> implements Try<A> {
   filter(f: (a: A) => boolean): Try<A> { throw 'impl child'; }
   toOptional(): Optional<A> { throw 'impl child'; }
   failed(): Try<A> { throw 'impl child'; }
-  recover<B>(f: (e: Error) => Optional<Try<B>>): Try<B> { throw 'impl child'; }
+  recover<B>(f: (e: Error) => Optional<B>): Try<B> { throw 'impl child'; }
+  recoverWith<B>(f: (e: Error) => Optional<Try<B>>): Try<B> { throw 'impl child'; }
 
   fold<B>(fe: (e: Error) => B, ff: (a: A) => B): B {
     return this.isFailure ? fe(this.getError()) : ff(this.get());
@@ -133,7 +135,11 @@ class SuccessImpl<A> extends TryImpl<A> implements Try<A> {
     return Failure<A>(new Error('Success.failed'));
   }
 
-  recover<B extends A>(f: (e: Error) => Optional<Try<B>>): Try<A> {
+  recover<B extends A>(f: (e: Error) => Optional<B>): Try<A> {
+    return Success(this.value);
+  }
+
+  recoverWith<B extends A>(f: (e: Error) => Optional<Try<B>>): Try<A> {
     return Success(this.value);
   }
 
@@ -178,7 +184,16 @@ class FailureImpl<A> extends TryImpl<A> implements Try<A> {
     return <Try<A>>this;
   }
 
-  recover<B extends A>(f: (e: Error) => Optional<Try<B>>): Try<A> {
+  recover<B extends A>(f: (e: Error) => Optional<B>): Try<A> {
+    try {
+      const op = f(this.e);
+      return op.nonEmpty ? Success(op.get()) : Failure<B>(this.e);
+    } catch (e) {
+      return Failure<B>(e);
+    }
+  }
+
+  recoverWith<B extends A>(f: (e: Error) => Optional<Try<B>>): Try<A> {
     try {
       const op = f(this.e);
       return op.nonEmpty ? op.get() : Failure<B>(this.e);

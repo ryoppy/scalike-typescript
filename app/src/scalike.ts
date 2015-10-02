@@ -1,6 +1,7 @@
 import {Optional, Some, None} from './Optional';
 import * as Either from './Either';
 import {Try, Success, Failure} from './Try';
+import {Future} from './Future';
 
 var scalike = {
   Optional: Optional,
@@ -12,7 +13,9 @@ var scalike = {
 
   Try: Try,
   Success: Success,
-  Failure: Failure
+  Failure: Failure,
+
+  Future: Future
 };
 
 export = scalike
