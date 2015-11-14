@@ -1,6 +1,6 @@
 {
   "name": "scalike",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "author": {
     "name": "ryoppy",
     "url": "https://github.com/ryoppy"
@@ -53,7 +53,8 @@
     "monad",
     "option",
     "maybe",
-    "either"
+    "either",
+    "future"
   ],
   "license": "MIT"
 }

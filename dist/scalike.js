@@ -158,7 +158,311 @@ var RightProjection = (function () {
 })();
 exports.RightProjection = RightProjection;
 
-},{"./Optional":2}],2:[function(require,module,exports){
+},{"./Optional":3}],2:[function(require,module,exports){
+///<reference path="../../typings/es6-promise/es6-promise.d.ts"/>
+var Try_1 = require('./Try');
+var Optional_1 = require('./Optional');
+function Future(f) {
+    if (f instanceof Promise) {
+        return new FutureImpl(f);
+    }
+    else {
+        return new FutureImpl(new Promise(function (resolve, reject) {
+            Try_1.Try(f).fold(function (e) { return reject(e); }, function (a) { return resolve(a); });
+        }));
+    }
+}
+exports.Future = Future;
+var Future;
+(function (Future) {
+    function fromPromise(p) {
+        return new FutureImpl(p);
+    }
+    Future.fromPromise = fromPromise;
+    function unit() {
+        return new FutureImpl(Promise.resolve(undefined), Try_1.Success(undefined));
+    }
+    Future.unit = unit;
+    function failed(e) {
+        return new FutureImpl(Promise.reject(e), Try_1.Failure(e));
+    }
+    Future.failed = failed;
+    function successful(a) {
+        return new FutureImpl(Promise.resolve(a), Try_1.Success(a));
+    }
+    Future.successful = successful;
+    function fromTry(t) {
+        var _this = this;
+        return t.fold(function (e) { return _this.failed(e); }, function (a) { return _this.successful(a); });
+    }
+    Future.fromTry = fromTry;
+    function sequence(fus) {
+        return new FutureImpl(Promise.all(fus.map(function (a) { return a.getPromise(); })));
+    }
+    Future.sequence = sequence;
+    function firstCompletedOf(fus) {
+        return new FutureImpl(Promise.race(fus.map(function (a) { return a.getPromise(); })));
+    }
+    Future.firstCompletedOf = firstCompletedOf;
+    function find(fus, f) {
+        var searchRecursive = function (fr) {
+            if (fr.length === 0) {
+                return Future.successful(Optional_1.None);
+            }
+            var fh = fr[0], ft = fr.slice(1);
+            return fh.transformWith(function (t) {
+                return t.fold(function (e) { return searchRecursive(ft); }, function (a) { return f(a) ? Future.successful(Optional_1.Optional(a)) : searchRecursive(ft); });
+            });
+        };
+        return searchRecursive(fus);
+    }
+    Future.find = find;
+    function foldLeft(fu, zero, f) {
+        var recursive = function (fr, acc) {
+            if (fr.length === 0) {
+                return Future.successful(acc);
+            }
+            var fh = fr[0], ft = fr.slice(1);
+            return fh.flatMap(function (a) { return recursive(ft, f(acc, a)); });
+        };
+        return recursive(fu, zero);
+    }
+    Future.foldLeft = foldLeft;
+    // reduceLeft<A extends B, B>
+    // Error : Constraint of a type parameter cannot reference any type parameter from the same type parameter list.
+    // 無理くさいので一旦保留...
+    //export function reduceLeft<A, B>(fu: Array<Future<A>>, f: (b: B, a: A) => B): Future<B> {
+    //  if (fu.length === 0) {
+    //    return Future.failed<B>(new Error('reduceLeft attempted on empty collection'));
+    //  } else {
+    //    const [fh, ...ft] = fu;
+    //    return fh.flatMap<B>(zero => Future.foldLeft<A, B>(ft, zero, f));
+    //  }
+    //}
+    function reduceLeft(fu, f) {
+        throw 'TODO';
+    }
+    Future.reduceLeft = reduceLeft;
+    function traverse(fu, f) {
+        var fzero = Future.successful([]);
+        if (fu.length === 0) {
+            return fzero;
+        }
+        return fu.reduce(function (fbs, a) {
+            return fbs.zipWith(f(a), function (bs, fa) { bs.push(fa); return bs; });
+        }, fzero);
+    }
+    Future.traverse = traverse;
+})(Future = exports.Future || (exports.Future = {}));
+var FutureImpl = (function () {
+    function FutureImpl(promise, already) {
+        var _this = this;
+        this.promise = promise;
+        this.completeValue = Optional_1.None;
+        if (already) {
+            this.completeValue = Optional_1.Some(already);
+        }
+        else {
+            promise.then(function (a) { return _this.completeValue = Optional_1.Some(Try_1.Success(a)); }, function (e) { return _this.completeValue = Optional_1.Some(Try_1.Failure(e)); });
+        }
+    }
+    FutureImpl.prototype.onComplete = function (f) {
+        this.promise.then(function (a) { return f(Try_1.Success(a)); }, function (e) { return f(Try_1.Failure(e)); });
+    };
+    FutureImpl.prototype.isCompleted = function () {
+        return this.completeValue.nonEmpty;
+    };
+    FutureImpl.prototype.value = function () {
+        return this.completeValue;
+    };
+    FutureImpl.prototype.failed = function () {
+        return this.transform(function (t) {
+            return t.fold(function (e) { return Try_1.Success(e); }, function (a) { return Try_1.Failure(new Error('Future.failed not completed with a throwable.')); });
+        });
+    };
+    FutureImpl.prototype.foreach = function (f) {
+        this.onComplete(function (t) { return t.foreach(f); });
+    };
+    FutureImpl.prototype.getPromise = function () {
+        return this.promise;
+    };
+    FutureImpl.prototype.tryPromise = function (f) {
+        try {
+            return f();
+        }
+        catch (e) {
+            return Promise.reject(e);
+        }
+    };
+    FutureImpl.prototype.transform = function (f) {
+        var _this = this;
+        return new FutureImpl(this.promise.then(function (a) { return _this.tryPromise(function () { return f(Try_1.Success(a)).fold(function (e) { return Promise.reject(e); }, function (b) { return Promise.resolve(b); }); }); }, function (e) { return _this.tryPromise(function () { return f(Try_1.Failure(e)).fold(function (e) { return Promise.reject(e); }, function (b) { return Promise.resolve(b); }); }); }));
+    };
+    FutureImpl.prototype.transform1 = function (fs, ff) {
+        return this.transform(function (t) {
+            return t.fold(function (e) { try {
+                return Try_1.Failure(ff(e));
+            }
+            catch (e) {
+                return Try_1.Failure(e);
+            } }, function (a) { return Try_1.Try(function () { return fs(a); }); });
+        });
+    };
+    FutureImpl.prototype.transformWith = function (f) {
+        var _this = this;
+        return new FutureImpl(this.promise.then(function (a) { return _this.tryPromise(function () { return f(Try_1.Success(a)).getPromise(); }); }, function (e) { return _this.tryPromise(function () { return f(Try_1.Failure(e)).getPromise(); }); }));
+    };
+    FutureImpl.prototype.map = function (f) {
+        return this.transform(function (t) { return t.map(f); });
+    };
+    FutureImpl.prototype.flatMap = function (f) {
+        return this.transformWith(function (t) { return t.fold(function (e) { return Future.failed(e); }, function (a) { return f(a); }); });
+    };
+    FutureImpl.prototype.filter = function (f) {
+        return this.map(function (a) {
+            if (f(a)) {
+                return a;
+            }
+            else {
+                throw new Error('Future.filter predicate is not satisfied');
+            }
+        });
+    };
+    FutureImpl.prototype.recover = function (f) {
+        return this.transform(function (t) { return t.recover(f); });
+    };
+    FutureImpl.prototype.recoverWith = function (f) {
+        return this.transformWith(function (t) {
+            return t.fold(function (e) { return f(e).fold(Future.failed(e), function (a) { return a; }); }, function (a) { return Future.successful(a); });
+        });
+    };
+    FutureImpl.prototype.zip = function (fu) {
+        return this.flatMap(function (a) { return fu.map(function (b) { return [a, b]; }); });
+    };
+    FutureImpl.prototype.zipWith = function (fu, f) {
+        return this.flatMap(function (a) { return fu.map(function (b) { return f(a, b); }); });
+    };
+    FutureImpl.prototype.fallbackTo = function (fu) {
+        var _this = this;
+        return this.recoverWith(function (e) { return Optional_1.Some(fu); }).recoverWith(function (e) { return Optional_1.Some(_this); });
+    };
+    FutureImpl.prototype.andThen = function (f) {
+        return this.transform(function (t) {
+            try {
+                f(t);
+            }
+            catch (e) {
+                if (typeof console !== 'undefined') {
+                    console.error(e);
+                }
+            }
+            return t;
+        });
+    };
+    FutureImpl.prototype.apply1 = function (ob, f) {
+        return this.zipWith(ob, f);
+    };
+    FutureImpl.prototype.apply2 = function (ob, oc, f) {
+        return this.flatMap(function (a) { return ob.flatMap(function (b) { return oc.map(function (c) { return f(a, b, c); }); }); });
+    };
+    FutureImpl.prototype.chain = function (ob) {
+        return new FutureBuilder1(this, ob);
+    };
+    return FutureImpl;
+})();
+/**
+ * FutureBuilder.
+ */
+var FutureBuilder1 = (function () {
+    function FutureBuilder1(oa, ob) {
+        this.oa = oa;
+        this.ob = ob;
+    }
+    FutureBuilder1.prototype.run = function (f) {
+        var _this = this;
+        return this.oa.flatMap(function (a) { return _this.ob.map(function (b) { return f(a, b); }); });
+    };
+    FutureBuilder1.prototype.chain = function (oc) {
+        return new FutureBuilder2(this.oa, this.ob, oc);
+    };
+    return FutureBuilder1;
+})();
+exports.FutureBuilder1 = FutureBuilder1;
+var FutureBuilder2 = (function () {
+    function FutureBuilder2(oa, ob, oc) {
+        this.oa = oa;
+        this.ob = ob;
+        this.oc = oc;
+    }
+    FutureBuilder2.prototype.run = function (f) {
+        var _this = this;
+        return this.oa.flatMap(function (a) { return _this.ob.flatMap(function (b) { return _this.oc.map(function (c) { return f(a, b, c); }); }); });
+    };
+    FutureBuilder2.prototype.chain = function (od) {
+        return new FutureBuilder3(this.oa, this.ob, this.oc, od);
+    };
+    return FutureBuilder2;
+})();
+exports.FutureBuilder2 = FutureBuilder2;
+var FutureBuilder3 = (function () {
+    function FutureBuilder3(oa, ob, oc, od) {
+        this.oa = oa;
+        this.ob = ob;
+        this.oc = oc;
+        this.od = od;
+    }
+    FutureBuilder3.prototype.run = function (f) {
+        var _this = this;
+        return this.oa.flatMap(function (a) { return _this.ob.flatMap(function (b) { return _this.oc.flatMap(function (c) {
+            return _this.od.map(function (d) { return f(a, b, c, d); });
+        }); }); });
+    };
+    FutureBuilder3.prototype.chain = function (oe) {
+        return new FutureBuilder4(this.oa, this.ob, this.oc, this.od, oe);
+    };
+    return FutureBuilder3;
+})();
+exports.FutureBuilder3 = FutureBuilder3;
+var FutureBuilder4 = (function () {
+    function FutureBuilder4(oa, ob, oc, od, oe) {
+        this.oa = oa;
+        this.ob = ob;
+        this.oc = oc;
+        this.od = od;
+        this.oe = oe;
+    }
+    FutureBuilder4.prototype.run = function (f) {
+        var _this = this;
+        return this.oa.flatMap(function (a) { return _this.ob.flatMap(function (b) { return _this.oc.flatMap(function (c) { return _this.od.flatMap(function (d) {
+            return _this.oe.map(function (e) { return f(a, b, c, d, e); });
+        }); }); }); });
+    };
+    FutureBuilder4.prototype.chain = function (of) {
+        return new FutureBuilder5(this.oa, this.ob, this.oc, this.od, this.oe, of);
+    };
+    return FutureBuilder4;
+})();
+exports.FutureBuilder4 = FutureBuilder4;
+var FutureBuilder5 = (function () {
+    function FutureBuilder5(oa, ob, oc, od, oe, of) {
+        this.oa = oa;
+        this.ob = ob;
+        this.oc = oc;
+        this.od = od;
+        this.oe = oe;
+        this.of = of;
+    }
+    FutureBuilder5.prototype.run = function (f) {
+        var _this = this;
+        return this.oa.flatMap(function (a) { return _this.ob.flatMap(function (b) { return _this.oc.flatMap(function (c) { return _this.od.flatMap(function (d) { return _this.oe.flatMap(function (e) {
+            return _this.of.map(function (ff) { return f(a, b, c, d, e, ff); });
+        }); }); }); }); });
+    };
+    return FutureBuilder5;
+})();
+exports.FutureBuilder5 = FutureBuilder5;
+
+},{"./Optional":3,"./Try":4}],3:[function(require,module,exports){
 /* tslint:disable:no-use-before-declare */
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -380,7 +684,7 @@ var OptionalBuilder5 = (function () {
 })();
 exports.OptionalBuilder5 = OptionalBuilder5;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -418,6 +722,7 @@ var TryImpl = (function () {
     TryImpl.prototype.toOptional = function () { throw 'impl child'; };
     TryImpl.prototype.failed = function () { throw 'impl child'; };
     TryImpl.prototype.recover = function (f) { throw 'impl child'; };
+    TryImpl.prototype.recoverWith = function (f) { throw 'impl child'; };
     TryImpl.prototype.fold = function (fe, ff) {
         return this.isFailure ? fe(this.getError()) : ff(this.get());
     };
@@ -496,6 +801,9 @@ var SuccessImpl = (function (_super) {
     SuccessImpl.prototype.recover = function (f) {
         return Success(this.value);
     };
+    SuccessImpl.prototype.recoverWith = function (f) {
+        return Success(this.value);
+    };
     SuccessImpl.prototype.toString = function () {
         return 'Success(' + this.value + ')';
     };
@@ -531,6 +839,15 @@ var FailureImpl = (function (_super) {
         return this;
     };
     FailureImpl.prototype.recover = function (f) {
+        try {
+            var op = f(this.e);
+            return op.nonEmpty ? Success(op.get()) : Failure(this.e);
+        }
+        catch (e) {
+            return Failure(e);
+        }
+    };
+    FailureImpl.prototype.recoverWith = function (f) {
         try {
             var op = f(this.e);
             return op.nonEmpty ? op.get() : Failure(this.e);
@@ -633,10 +950,11 @@ var TryBuilder5 = (function () {
 })();
 exports.TryBuilder5 = TryBuilder5;
 
-},{"./Optional":2}],4:[function(require,module,exports){
+},{"./Optional":3}],5:[function(require,module,exports){
 var Optional_1 = require('./Optional');
 var Either = require('./Either');
 var Try_1 = require('./Try');
+var Future_1 = require('./Future');
 var scalike = {
     Optional: Optional_1.Optional,
     Some: Optional_1.Some,
@@ -645,9 +963,10 @@ var scalike = {
     Left: Either.Left,
     Try: Try_1.Try,
     Success: Try_1.Success,
-    Failure: Try_1.Failure
+    Failure: Try_1.Failure,
+    Future: Future_1.Future
 };
 module.exports = scalike;
 
-},{"./Either":1,"./Optional":2,"./Try":3}]},{},[4])(4)
+},{"./Either":1,"./Future":2,"./Optional":3,"./Try":4}]},{},[5])(5)
 });
