@@ -77,8 +77,12 @@ describe("Try", () => {
     assert(Try(err).transform((a) => Success(a + 1), (e) => Success(0)).get() === 0);
   });
   it("recover", () => {
-    assert(Try(f).recover((e) => Some(Success(0))).get() === 1);
-    assert(Try(err).recover((e) => Some(Success(0))).get() === 0);
+    assert(Try(f).recover((e) => Some(0)).get() === 1);
+    assert(Try(err).recover((e) => Some(0)).get() === 0);
+  });
+  it("recoverWith", () => {
+    assert(Try(f).recoverWith((e) => Some(Success(0))).get() === 1);
+    assert(Try(err).recoverWith((e) => Some(Success(0))).get() === 0);
   });
   it("apply1,2", () => {
     assert(Try(f).apply1(Try(f), (a, b) => a + b).get() === 2);

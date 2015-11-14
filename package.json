@@ -1,6 +1,6 @@
 {
   "name": "scalike",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "author": {
     "name": "ryoppy",
     "url": "https://github.com/ryoppy"
@@ -10,6 +10,7 @@
   "devDependencies": {
     "browserify": "^11.1.0",
     "coffee-script": "^1.9.0",
+    "es6-promise": "^3.0.2",
     "espower-typescript": "^1.0.0",
     "gulp": "^3.6.2",
     "gulp-concat": "^2.6.0",
@@ -52,7 +53,8 @@
     "monad",
     "option",
     "maybe",
-    "either"
+    "either",
+    "future"
   ],
   "license": "MIT"
 }
