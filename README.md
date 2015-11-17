@@ -16,19 +16,20 @@ If you wanna `List`, `Map`, ... You can use [Immutable.js](https://github.com/fa
 Install scalike using npm.
 
 ```
-npm install scalike
+$ npm install scalike
 ```
 
-Example in TypeScript.
+Example in TypeScript. install d.ts.
 
 ```
+$ tsd install scalike
 $ vi example.ts
 ```
 
 write.
 
 ```
-///<reference path='./node_modules/scalike/dist/scalike.d.ts'/>
+///<reference path='./typings/scalike/scalike.d.ts'/>
 import {Optional} from 'scalike';
 
 var a = Optional(1).map(x => x + 1); // Some(2)
