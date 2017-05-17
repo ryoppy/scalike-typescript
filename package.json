@@ -6,6 +6,7 @@
     "url": "https://github.com/ryoppy"
   },
   "main": "dist/scalike.js",
+  "types": "dist/scalike.d.ts",
   "dependencies": {},
   "devDependencies": {
     "browserify": "^11.1.0",
